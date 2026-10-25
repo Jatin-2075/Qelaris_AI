@@ -1,0 +1,5 @@
+export type Project = { id: string; name: string; description?: string | null; github?: string | null; created_at?: string };
+export type ApiKey = { id: string; key_prefix: string; is_active: boolean; created_at: string; last_used?: string | null; project_id: string };
+export type EventRecord = { id: string; project_id: string; incident_id?: string | null; event_type?: string; service_name?: string; trace_id?: string | null; timestamp: string; payload?: Record<string, unknown>; created_at?: string; status_code?: number; duration_ms?: number; route?: string; method?: string; exception_type?: string | null; exception_message?: string | null; environment?: string };
+export type Incident = { id: string; project_id: string; title: string; description: string; severity: "low"|"medium"|"high"|"critical"; status: "open"|"acknowledged"|"resolved"; first_seen_at: string; last_seen_at: string; created_at?: string; details?: Record<string, unknown> };
+export type IncidentDiagnosis = { id: string; incident_id: string; summary: string; possible_causes: unknown[]; recommendations: unknown[]; howsolved?: string | null; model_name: string; created_at: string };
