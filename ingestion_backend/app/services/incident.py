@@ -1,14 +1,14 @@
 import asyncio
+import uuid
 import redis.asyncio as redis
 
 from sqlalchemy.orm import Session
 
 from ....database.database import SessionLocal
 from ....database.models.event_model import Event
-from ....database.models.incident_model import Incident, IncidentDiagnosis
-from ..settings import settings
-from .evidence import store_incident_evidence
-from .diagnosis_service import diagnose_event
+from ....database.models.incident_model import Incident
+from ..setting import settings
+from ..graphrag.pipeline import run_graphrag
 
 
 STREAM = "sentinel:events"
@@ -74,34 +74,18 @@ async def process_event(event_id: str) -> str:
         db.commit()
         db.refresh(incident)
 
+        event.incident_id = incident.id
+        db.commit()
+
         incident_id = incident.id
+        event_pk = event.id
 
-        store_incident_evidence(
-            db=db,
-            incident_id=incident_id,
-            event=event,
-        )
-
-        # Close the DB session while waiting for Gemini
         db.close()
         db = None
 
-        diagnosis = await diagnose_event(event)
+        await run_graphrag(incident_id, event_pk)
 
-        db = SessionLocal()
-
-        record = IncidentDiagnosis(
-            incident_id=incident_id,
-            summary=diagnosis["summary"],
-            possible_causes=diagnosis.get("possible_causes", []),
-            recommendations=diagnosis.get("recommendations", []),
-            model_name=settings.GEMINI_MODEL,
-        )
-
-        db.add(record)
-        db.commit()
-
-        return "failed: incident, evidence and diagnosis saved"
+        return "failed: incident, graph and graphrag diagnosis saved"
 
     except Exception:
         if db is not None:
