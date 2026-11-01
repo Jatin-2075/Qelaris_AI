@@ -1,6 +1,6 @@
 <div align="center">
 
-# RepoPilot
+# Qelaris
 
 ### See the signal. Trace the cause. Understand the system.
 
