@@ -1,14 +1,16 @@
 from datetime import datetime
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, WebSocket, WebSocketDisconnect
+from jose import JWTError, jwt
 from sqlalchemy import tuple_
 from sqlalchemy.orm import Session
 
-from ..database.database import get_db
-from ..models.project_model import ProjectData
-from ..models.event_model import Event, Incident
-from ..security.security import get_current_user
+from database.database import get_db
+from database.models.project_model import ProjectData
+from database.models.event_model import Event
+from database.models.incident_model import Incident
+from ..security.security import ALGORITHM, SECRET_KEY, get_current_user
 
 router = APIRouter(tags=["Project Monitoring"])
 
@@ -40,7 +42,7 @@ manager = ConnectionManager()
 def verify_project_access(project_id: UUID, db: Session, user_id: UUID):
     project = db.query(ProjectData.id).filter(
         ProjectData.id == project_id,
-        ProjectData.owner_id == user_id,
+        ProjectData.user_id == user_id,
     ).first()
 
     if not project:
@@ -129,11 +131,11 @@ def get_events(
                 "id": str(e.id),
                 "project_id": str(e.project_id),
                 "incident_id": str(e.incident_id) if e.incident_id else None,
-                "event_type": e.event_type,
+                "event_id": str(e.event_id),
                 "service_name": e.service_name,
-                "trace_id": e.trace_id,
                 "timestamp": e.timestamp.isoformat(),
-                "payload": e.payload,
+                "status_code": e.status_code,
+                "route": e.route,
                 "created_at": e.created_at.isoformat(),
             }
             for e in rows
@@ -192,8 +194,8 @@ def get_incidents(
                 "project_id": str(i.project_id),
                 "title": i.title,
                 "description": i.description,
-                "severity": i.severity.value,
-                "status": i.status.value,
+                "severity": i.severity,
+                "status": i.status,
                 "first_seen_at": i.first_seen_at.isoformat(),
                 "last_seen_at": i.last_seen_at.isoformat(),
             }
@@ -209,7 +211,7 @@ async def notify_event(event: Event):
         "type": "event.created",
         "data": {
             "id": str(event.id),
-            "event_type": event.event_type,
+            "event_id": str(event.event_id),
             "service_name": event.service_name,
             "timestamp": event.timestamp.isoformat(),
         },
@@ -222,8 +224,8 @@ async def notify_incident(incident: Incident):
         "data": {
             "id": str(incident.id),
             "title": incident.title,
-            "severity": incident.severity.value,
-            "status": incident.status.value,
+            "severity": incident.severity,
+            "status": incident.status,
             "last_seen_at": incident.last_seen_at.isoformat(),
         },
     })

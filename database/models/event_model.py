@@ -1,14 +1,11 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import (
-    String, Float, DateTime, ForeignKey, Index,
-    BigInteger, UniqueConstraint
-)
+from sqlalchemy import String, Float, DateTime, ForeignKey, Index
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from ..DataBase import Base
+from ..database import Base
 
 
 def utcnow() -> datetime:

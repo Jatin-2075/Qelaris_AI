@@ -7,10 +7,11 @@ from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
+from typing import Union
 
 from .settings import settings
-from ..DataBase.Database import get_db, SessionLocal
-from ..Models.Auth_Data import Auth_User
+from database.database import get_db, SessionLocal
+from database.models.auth_model import AuthUser
 
 SECRET_KEY = settings.SECRET_KEY
 ALGORITHM = settings.ALGORITHM
@@ -47,22 +48,22 @@ def decode_access_token(token: str) -> uuid.UUID | None:
     except (JWTError, ValueError, TypeError):
         return None
 
-def get_user_from_token_ws(token: str) -> Auth_User | None:
+def get_user_from_token_ws(token: str) -> AuthUser | None:
     user_id = decode_access_token(token)
     if user_id is None:
         return None
     db = SessionLocal()
     try:
-        return db.query(Auth_User).filter(Auth_User.id == user_id).first()
+        return db.query(AuthUser).filter(AuthUser.id == user_id).first()
     finally:
         db.close()
 
-async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> Auth_User:
+async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> AuthUser:
     credentials_exception = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate credentials", headers={"WWW-Authenticate": "Bearer"})
     user_id = decode_access_token(token)
     if user_id is None:
         raise credentials_exception
-    user = db.query(Auth_User).filter(Auth_User.id == user_id).first()
+    user = db.query(AuthUser).filter(AuthUser.id == user_id).first()
     if user is None:
         raise credentials_exception
     return user

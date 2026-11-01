@@ -1,6 +1,6 @@
 import json
 from google import genai
-from ....settings import settings
+from ..setting import settings
 client = genai.Client(api_key=settings.GEMINI_API_KEY)
 
 

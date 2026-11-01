@@ -15,13 +15,16 @@ STREAM = "sentinel:events"
 GROUP = "sentinel-workers"
 CONSUMER = "worker-1"
 
-redis_client = redis.from_url(
-    settings.REDIS_URL,
-    decode_responses=True,
+redis_client = (
+    redis.from_url(settings.REDIS_URL, decode_responses=True)
+    if settings.REDIS_URL
+    else None
 )
 
 
 async def setup_consumer_group():
+    if redis_client is None:
+        raise RuntimeError("REDIS_URL is not configured")
     try:
         await redis_client.xgroup_create(
             STREAM, GROUP, id="0", mkstream=True

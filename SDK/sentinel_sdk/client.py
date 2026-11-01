@@ -6,13 +6,21 @@ import httpx
 
 
 class SentinelClient:
-    def __init__(self, timeout: float = 5.0) -> None:
-        backend_url = os.getenv("SENTINEL_BACKEND_URL")
+    def __init__(
+        self,
+        backend_url: str | None = None,
+        api_key: str | None = None,
+        timeout: float = 5.0,
+    ) -> None:
+        backend_url = backend_url or os.getenv("SENTINEL_BACKEND_URL")
 
         if not backend_url or not backend_url.strip():
             raise ValueError("SENTINEL_BACKEND_URL is not set")
+        if not api_key or not api_key.strip():
+            raise ValueError("api_key is required")
 
         self.backend_url = backend_url.rstrip("/")
+        self.api_key = api_key
         self._closed = False
 
         self.http_client = httpx.AsyncClient(
@@ -32,7 +40,7 @@ class SentinelClient:
         try:
             response = await self.http_client.post(
                 "/v1/telemetry",
-                json=event,
+                json={**event, "api": self.api_key},
             )
             response.raise_for_status()
             return True

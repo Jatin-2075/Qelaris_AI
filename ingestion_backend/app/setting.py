@@ -1,9 +1,10 @@
+from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     DATABASE_URL: str
-    REDIS_URL: str
+    REDIS_URL: str | None = Field(default=None, validation_alias=AliasChoices("REDIS_URL", "REDIS_DB_URL"))
     GEMINI_API_KEY: str
     GEMINI_MODEL: str = "gemini-2.5-flash"
     EMBED_MODEL: str = "gemini-embedding-001"

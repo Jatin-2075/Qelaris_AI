@@ -1,19 +1,21 @@
 import uuid
+import hashlib
+import secrets
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
 from redis.asyncio import Redis
 
 from ....database.database import get_db
-from ....database.models.project_model import ApiKey
 from ....database.models.event_model import Event
+from ....database.models.project_model import ApiKey
 from ..schemas import TelemetryRequest
-from ..settings import settings
+from ..setting import settings
 
 hashed = CryptContext(schemes=["bcrypt"], deprecated="auto")
-redis = Redis.from_url(settings.REDIS_URL, decode_responses=True)
+redis = Redis.from_url(settings.REDIS_URL, decode_responses=True) if settings.REDIS_URL else None
 
-router = APIRouter(prefix="/event", tags=["save event"])
+router = APIRouter(tags=["save event"])
 
 def get_api_key(api: str, db: Session) -> ApiKey | None:
     key_prefix = api[:10]
@@ -27,7 +29,7 @@ def get_api_key(api: str, db: Session) -> ApiKey | None:
     return None
 
 
-@router.post("/save_telementry_data_in_ingestion", status_code=status.HTTP_202_ACCEPTED)
+@router.post("/telemetry", status_code=status.HTTP_202_ACCEPTED)
 async def pipeline(payload: TelemetryRequest, db: Session = Depends(get_db)):
     api_key = get_api_key(payload.api, db)
     
@@ -57,8 +59,14 @@ async def pipeline(payload: TelemetryRequest, db: Session = Depends(get_db)):
     fresh_event_id = str(event.id)
     project_id = str(event.project_id)
 
+    if redis is None:
+        raise HTTPException(status_code=503, detail="Queue is not configured")
+
     try:
-        await redis.xadd("sentinel:events", {"project_id": str(project_id)}, "event_id" : str(fresh_event_id ))
+        await redis.xadd(
+            "sentinel:events",
+            {"project_id": project_id, "event_id": fresh_event_id},
+        )
     except Exception:
         raise HTTPException(status_code=503, detail="Event saved, but queue unavailable")
 

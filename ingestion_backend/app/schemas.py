@@ -8,6 +8,7 @@ class TelemetryRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     event_id: UUID
+    api: str = Field(min_length=10)
     timestamp: datetime
     service_name: str = Field(min_length=1, max_length=100)
     environment: str = Field(min_length=1, max_length=50)

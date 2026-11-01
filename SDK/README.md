@@ -51,12 +51,12 @@ the middleware to your application:
 ```python
 from fastapi import FastAPI
 
-from sentinel_sdk.client import Sentinel_client
+from sentinel_sdk.client import SentinelClient
 from sentinel_sdk.middleware import SentinelMiddleware
 
 app = FastAPI()
 
-telemetry_client = Sentinel_client(
+telemetry_client = SentinelClient(
     backend_url="http://localhost:8000",
     api_key="your-api-key",
 )
@@ -72,7 +72,7 @@ app.add_middleware(
 For a deployed backend, replace the local URL:
 
 ```python
-telemetry_client = Sentinel_client(
+telemetry_client = SentinelClient(
     backend_url="https://api.example.com",
     api_key="your-api-key",
 )
@@ -103,10 +103,10 @@ The client sends that event as a JSON `POST` request to `/v1/telemetry`.
 
 ## Configuration
 
-### `Sentinel_client`
+### `SentinelClient`
 
 ```python
-Sentinel_client(
+SentinelClient(
     backend_url="http://localhost:8000",
     api_key="your-api-key",
     timeout=5.0,
@@ -128,7 +128,7 @@ SentinelMiddleware(
 )
 ```
 
-- `client`: Required `Sentinel_client`, or another client exposing
+- `client`: Required `SentinelClient`, or another client exposing
   `send_event(event)`.
 - `service_name`: Required name of the application or service.
 - `environment`: Optional deployment environment. Defaults to
@@ -139,7 +139,7 @@ SentinelMiddleware(
 The client supports asynchronous context-manager usage:
 
 ```python
-async with Sentinel_client(
+async with SentinelClient(
     backend_url="http://localhost:8000",
     api_key="your-api-key",
 ) as telemetry_client:
@@ -150,7 +150,7 @@ For long-running applications, create one client during startup and close it
 during shutdown:
 
 ```python
-telemetry_client = Sentinel_client(
+telemetry_client = SentinelClient(
     backend_url="http://localhost:8000",
     api_key="your-api-key",
 )

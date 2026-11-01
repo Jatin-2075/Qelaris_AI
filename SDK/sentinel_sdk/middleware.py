@@ -6,6 +6,8 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
 
+from .events import build_event
+
 logger = logging.getLogger("sentinel")
 
 class SentinelMiddleware(BaseHTTPMiddleware):
@@ -30,7 +32,6 @@ class SentinelMiddleware(BaseHTTPMiddleware):
         request_id = str(uuid4())
         exception_type = None
         exception_message = None
-        timestamp = datetime.now(timezone.utc)
         response = None
         status_code = 500
 
@@ -52,9 +53,6 @@ class SentinelMiddleware(BaseHTTPMiddleware):
 
             event = build_event(
                 request_id=request_id,
-                timestamp=timestamp,
-                api_key_id=self.client.api_key_id,
-                project_id=self.client.project_id,
                 service_name=self.service_name,
                 method=request.method,
                 route=route,

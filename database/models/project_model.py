@@ -13,14 +13,14 @@ class ProjectData(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name: Mapped[str] = mapped_column(String(100))
     description: Mapped[str] = mapped_column(String(500))
-    github : Mapped[str] = mapped_column(String, nullable=True)
+    github: Mapped[str | None] = mapped_column(String(500), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.now(timezone.utc))
 
-    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("auth_users.id", ondelete="CASCADE"), index=True)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("auth_users.id", ondelete="CASCADE"), index=True, nullable=False)
 
     owner: Mapped["AuthUser"] = relationship(back_populates="projects")
     api_keys: Mapped[list["ApiKey"]] = relationship(back_populates="project",cascade="all, delete-orphan",)
-    metrics: Mapped[list["Metric"]] = relationship(
+    events: Mapped[list["Event"]] = relationship(
         back_populates="project",
         cascade="all, delete-orphan",
     )
@@ -33,6 +33,7 @@ class ApiKey(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
 
     key_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    key_prefix: Mapped[str] = mapped_column(String(10), index=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.now(timezone.utc))

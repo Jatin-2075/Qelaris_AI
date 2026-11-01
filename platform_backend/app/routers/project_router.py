@@ -6,8 +6,8 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from ..database.database import get_db
-from ..models.project_model import ProjectData, ApiKey
+from database.database import get_db
+from database.models.project_model import ProjectData, ApiKey
 from ..schemas.project_schema import Project, ProjectResponse, ApiKeyCreate, ApiKeyResponse
 from ..security.security import get_current_user
 
@@ -15,7 +15,7 @@ router = APIRouter(tags=["Projects & API Keys"])
 
 @router.post("/projects", response_model=ProjectResponse, status_code=status.HTTP_201_CREATED)
 def create_project(payload: Project, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
-    project = ProjectData(name=payload.name, description=payload.description, github=payload.github, owner_id=current_user.id)
+    project = ProjectData(name=payload.name, description=payload.description, github=payload.github, user_id=current_user.id)
     db.add(project)
     db.commit()
     db.refresh(project)
@@ -24,12 +24,12 @@ def create_project(payload: Project, db: Session = Depends(get_db), current_user
 
 @router.get("/projects", response_model=list[ProjectResponse])
 def get_projects(db: Session = Depends(get_db), current_user=Depends(get_current_user)):
-    return db.query(ProjectData).filter(ProjectData.owner_id == current_user.id).all()
+    return db.query(ProjectData).filter(ProjectData.user_id == current_user.id).all()
 
 
 @router.get("/projects/{project_id}", response_model=ProjectResponse)
 def get_project(project_id: UUID, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
-    project = db.query(ProjectData).filter(ProjectData.id == project_id, ProjectData.owner_id == current_user.id).first()
+    project = db.query(ProjectData).filter(ProjectData.id == project_id, ProjectData.user_id == current_user.id).first()
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
     return project
@@ -37,7 +37,7 @@ def get_project(project_id: UUID, db: Session = Depends(get_db), current_user=De
 
 @router.delete("/projects/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_project(project_id: UUID, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
-    project = db.query(ProjectData).filter(ProjectData.id == project_id, ProjectData.owner_id == current_user.id).first()
+    project = db.query(ProjectData).filter(ProjectData.id == project_id, ProjectData.user_id == current_user.id).first()
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
     db.delete(project)
@@ -46,7 +46,7 @@ def delete_project(project_id: UUID, db: Session = Depends(get_db), current_user
 
 @router.post("/api-keys", status_code=status.HTTP_201_CREATED)
 def create_api_key(payload: ApiKeyCreate, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
-    project = db.query(ProjectData).filter(ProjectData.id == payload.project_id, ProjectData.owner_id == current_user.id).first()
+    project = db.query(ProjectData).filter(ProjectData.id == payload.project_id, ProjectData.user_id == current_user.id).first()
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
 
