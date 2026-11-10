@@ -18,6 +18,3 @@ fastapi = ["fastapi>=0.110.0"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["sentinel_sdk"]
-
-[tool.hatch.build.targets.wheel]
-packages = ["sentinel_sdk"]
