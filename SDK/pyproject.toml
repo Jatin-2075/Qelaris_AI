@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "sentinel-sdk"
+name = "Qelaris"
 version = "0.1.0"
 description = "Lightweight telemetry SDK for Sentinel"
 readme = "README.md"
